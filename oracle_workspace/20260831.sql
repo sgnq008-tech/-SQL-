@@ -470,4 +470,97 @@ select e.ename, e.job, e.sal, s.grade from emp e, salgrade s where e.sal between
 select e.ename "자신", e.deptno, c.ename "동료", c.deptno from emp e, emp c 
 where e.ename<> c.ename and e.deptno= c.deptno order by e.ename;
 
-내일은 수업은 서브커리와 테이블 만들기 
+제공해주신 오라클 SQL 학습 내용을 깔끔하고 보기 쉽게 구조화하여 정리해 드립니다.
+
+---
+
+## 📚 오라클 SQL 핵심 정리 (단일행 함수, 그룹 함수, 조인)
+
+### 1. `DUAL` 테이블
+
+* **특징**: 산술 연산이나 가상 컬럼의 결과를 **한 번만 출력**할 때 사용하는 더미(Dummy) 테이블입니다. `DUMMY`라는 하나의 컬럼으로 구성되어 있습니다.
+* **예시**: `SELECT 24 * 60 * 60 FROM DUAL;` (하루가 몇 초인지 계산)
+
+---
+
+### 2. 단일행 함수 (Single-Row Functions)
+
+각 행마다 개별적으로 적용되어 결과를 반환하는 함수입니다.
+
+#### ① 문자 함수
+
+* `LOWER(str)` / `UPPER(str)`: 소문자 / 대문자로 변환
+* `INITCAP(str)`: 첫 글자만 대문자, 나머지는 소문자로 변환
+* `CONCAT(str1, str2)`: 두 문자를 연결 (3개 이상은 중첩 사용 필요)
+* `SUBSTR(str, pos, len)`: 문자열 일부 추출 (시작 위치가 음수면 뒤에서부터 카운트)
+* `LENGTH(str)`: 문자열의 길이 반환
+* `INSTR(str, target, pos, nth)`: 특정 문자의 위치 반환
+* `LPAD` / `RPAD`: 빈 자리를 특정 기호로 채워 정렬
+* `REPLACE(str, from, to)`: 특정 문자열을 변경
+
+#### ② 숫자 함수
+
+* `ABS(n)`: 절대값 반환 (무조건 양수)
+* `FLOOR(n)`: 소수점 이하 버림
+* `ROUND(n, pos)`: 특정 자릿수에서 반올림
+* `TRUNC(n, pos)`: 특정 자릿수에서 버림
+* `MOD(n1, n2)`: 나머지 연산
+
+#### ③ 날짜 함수
+
+* `SYSDATE`: 시스템의 현재 날짜 및 시간 반환
+* `MONTHS_BETWEEN(d1, d2)`: 두 날짜 사이의 개월 수 반환
+* `ADD_MONTHS(d, n)`: 특정 날짜에 개월 수 더하기
+* `NEXT_DAY(d, day)`: 지정한 요일이 돌아오는 가장 가까운 날짜 반환
+* `LAST_DAY(d)`: 해당 월의 마지막 날짜 반환
+
+#### ④ 변환 함수
+
+* `TO_CHAR(val, fmt)`: 숫자나 날짜를 문자형으로 변환
+* `TO_DATE(str, fmt)`: 문자를 날짜형으로 변환
+* `TO_NUMBER(str, fmt)`: 문자를 숫자형으로 변환
+
+#### ⑤ 일반 함수
+
+* `NVL(val, replacement)`: 값이 `NULL`인 경우 지정한 값으로 치환
+* `DECODE(expr, search1, result1, ..., default)`: 조건에 따라 값을 변환 (`if-else` 구조)
+* `CASE WHEN ... THEN ... ELSE ... END`: 복잡한 조건문 처리 (`switch` 구조)
+
+---
+
+### 3. 그룹 함수 (Group Functions)
+
+여러 행을 그룹으로 묶어 연산 후 하나의 결과를 반환합니다 (`NULL`은 자동으로 제외됨).
+
+* `SUM`: 누적 합계
+* `AVG`: 평균
+* `MAX` / `MIN`: 최대값 / 최소값
+* `COUNT`: 행의 총 개수
+* `STDDEV` / `VARIANCE`: 표준편차 / 분산
+
+> **💡 그룹화 및 조건절**
+> * **`GROUP BY`**: 특정 컬럼을 기준으로 데이터 그룹화
+> * **`HAVING`**: 그룹화된 결과에 대한 조건 지정 (주로 그룹 함수 결과에 사용)
+> 
+> 
+
+---
+
+### 4. 조인 (JOIN)
+
+두 개 이상의 테이블을 연결하여 데이터를 조회하는 방법입니다.
+
+* **Equi Join (등가 조인)**: 공통 컬럼의 값이 일치하는 경우 연결 (`=` 사용)
+* **Non-Equi Join (비등가 조인)**: 범위를 기반으로 조인 (`BETWEEN`, `>=` 등 사용)
+* **Outer Join (외부 조인)**: 조인 조건에 만족하지 않는 행도 출력 (`(+)` 기호 활용)
+* **Self Join (셀프 조인)**: 자기 자신 테이블과 조인 (별칭 필수 사용)
+
+```sql
+-- [예시] 사원 이름과 부서명을 출력하는 Equi Join
+SELECT e.ename, d.dname 
+FROM emp e, dept d 
+WHERE e.deptno = d.deptno;
+
+```
+
+---
