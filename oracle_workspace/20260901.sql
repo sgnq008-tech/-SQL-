@@ -376,3 +376,137 @@ insert into dept01 values(40,'OPERATIONS',null);
 -- null값을 갖는 컬럼을 추가하기 위해서 null 대신 ' '를 사용할 수 있다.
 
 insert into dept01 values(40,'OPERATIONS',' ');
+
+/*************************************************************
+ * [오라클 SQL 복습 요약 노트]
+ * - 서브쿼리, DDL, DML 핵심 내용 정리
+ *************************************************************/
+
+
+/* ===========================================================
+   1. 서브쿼리 (Subquery)
+   - 하나의 SQL 문장 안에 포함된 또 다른 SELECT 문장
+   - 항상 괄호 '()'로 감싸야 하며, 메인 쿼리 실행 전 먼저 실행됨
+   =========================================================== */
+
+/*
+   (1) 단일행 서브쿼리
+       - 서브쿼리의 결과가 오직 하나의 행만 반환
+       - 단일행 비교연산자 사용: =, >, <, >=, <=, <>
+       
+       [예시] SCOTT과 같은 부서에 근무하는 사원 정보 출력
+       SELECT * FROM emp 
+       WHERE deptno = (SELECT deptno FROM emp WHERE ename = 'SMITH');
+*/
+
+/*
+   (2) 다중행 서브쿼리
+       - 서브쿼리의 결과가 하나 이상(여러 행) 반환될 때 사용
+       - 다중행 연산자 종류:
+         * IN        : 서브쿼리 결과 중 하나라도 일치하면 참
+         * ANY / SOME: 서브쿼리 결과 중 조건을 하나 이상 만족하면 참
+         * ALL       : 서브쿼리의 모든 값과 일치해야 참
+         * EXISTS    : 서브쿼리 결과 중 만족하는 값이 하나라도 존재하면 참
+       
+       [예시] 급여를 3000 이상 받는 사원과 같은 부서에 소속된 사원 출력
+       SELECT ename, sal, deptno FROM emp 
+       WHERE deptno IN (SELECT DISTINCT deptno FROM emp WHERE sal >= 3000);
+*/
+
+
+/* ===========================================================
+   2. DDL (Data Definition Language) — 데이터 정의어
+   - 테이블 구조를 생성(CREATE), 수정(ALTER), 삭제(DROP, TRUNCATE)
+   =========================================================== */
+
+/*
+   (1) 테이블 생성 (CREATE TABLE)
+       CREATE TABLE emp01 (
+           empno  NUMBER(4),       -- 사원번호 (정수 4자리)
+           ename  VARCHAR2(20),    -- 사원이름 (가변문자 20바이트)
+           sal    NUMBER(7,2)      -- 급여 (전체 7자리 중 소수점 이하 2자리)
+       );
+       
+       * 주요 데이터 타입:
+         - CHAR(n)       : 고정 길이 문자 (최대 2000바이트)
+         - VARCHAR2(n)   : 가변 길이 문자 (최대 4000바이트)
+         - NUMBER(w, d)  : 숫자형 (w: 전체 자리수, d: 소수점 이하 자리수)
+         - DATE          : 날짜 및 시간
+*/
+
+/*
+   (2) 기존 테이블 복사
+       -- 구조와 데이터를 모두 복사 (제약조건은 복사되지 않음)
+       CREATE TABLE emp02 AS SELECT * FROM emp; 
+*/
+
+/*
+   (3) 테이블 구조 수정 (ALTER TABLE)
+       -- 컬럼 추가
+       ALTER TABLE emp01 ADD (job VARCHAR2(30));
+       
+       -- 컬럼 수정 (데이터가 없으면 타입/크기 변경 가능, 데이터가 있으면 크기 늘리기만 가능)
+       ALTER TABLE emp01 MODIFY (job VARCHAR2(30));
+       
+       -- 컬럼 삭제
+       ALTER TABLE emp01 DROP COLUMN job;
+*/
+
+/*
+   (4) 테이블 삭제 및 관리
+       -- 일반 삭제 (휴지통으로 이동)
+       DROP TABLE emp01;
+       
+       -- 완전 삭제 (휴지통에 안 넣고 즉시 삭제)
+       DROP TABLE emp01 PURGE;
+       
+       -- 테이블 이름 변경
+       RENAME emp01 TO emp02;
+       
+       -- 테이블 데이터 전체 삭제 (DDL이므로 ROLLBACK 불가, 공간 즉시 해제)
+       TRUNCATE TABLE emp01; 
+*/
+
+
+/* ===========================================================
+   3. DML (Data Manipulation Language) — 데이터 조작어
+   - 테이블에 데이터를 삽입(INSERT), 수정(UPDATE), 삭제(DELETE)
+   =========================================================== */
+
+/*
+   (1) 데이터 삽입 (INSERT INTO)
+       
+       -- 방법 1: 특정 컬럼만 지정하여 입력 (컬럼 순서와 값 순서가 1:1 매칭)
+       INSERT INTO dept01 (deptno, dname, loc) 
+       VALUES (10, 'ACCOUNTING', 'NEW YORK');
+       
+       -- 방법 2: 모든 컬럼에 순서대로 입력
+       INSERT INTO dept01 
+       VALUES (20, 'RESEARCH', 'DALLAS');
+*/
+
+/*
+   (2) NULL 값 삽입 방법
+       
+       -- 암시적 방법: 컬럼 리스트에서 해당 컬럼을 아예 생략하면 자동으로 NULL 입력됨
+       INSERT INTO dept01 (deptno, dname) 
+       VALUES (30, 'SALES'); 
+       
+       -- 명시적 방법: VALUES에 직접 NULL을 적어줌
+       INSERT INTO dept01 
+       VALUES (40, 'OPERATIONS', NULL);
+*/
+
+
+/* ===========================================================
+   4. 핵심 비교 포인트 요약
+   =========================================================== */
+/*
+   [DELETE vs TRUNCATE]
+   - DELETE  : DML 명령어. 데이터가 삭제되어도 ROLLBACK으로 복구 가능.
+   - TRUNCATE: DDL 명령어. 데이터와 인덱스를 통째로 날리며 ROLLBACK 불가, 속도가 빠름.
+
+   [단일행 서브쿼리 vs 다중행 서브쿼리]
+   - 결과 행이 1개면: =, >, < 같은 단일행 연산자 사용.
+   - 결과 행이 2개 이상이면: IN, ANY, ALL 같은 다중행 연산자 필수.
+*/
