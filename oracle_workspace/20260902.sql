@@ -571,3 +571,90 @@ FROM user_constraints WHERE table_name = 'EMP05';
   3. 수정:
 
 
+/* ==========================================================================
+   1. 데이터 조작어 (DML) : UPDATE & DELETE
+   ========================================================================== */
+
+/*
+   [UPDATE - 데이터 수정]
+   - 기존 행의 컬럼 값을 변경합니다.
+   - 형식: UPDATE 테이블명 SET 컬럼1 = 값1, 컬럼2 = 값2 WHERE 조건;
+   - 주의: WHERE 절을 생략하면 테이블의 모든 행이 변경되므로 주의해야 합니다.
+*/
+-- 예시: 사원번호가 10번인 사원의 부서번호를 30번으로 수정
+UPDATE emp01 SET deptno = 30 WHERE deptno = 10;
+
+-- 예시: 여러 개의 컬럼을 한 번에 수정 (SCOTT의 부서와 직급 변경)
+UPDATE emp01 SET deptno = 20, job = 'MANAGER' WHERE ename = 'SCOTT';
+
+
+/*
+   [DELETE - 데이터 삭제]
+   - 테이블에서 불필요한 행(Row)을 삭제합니다.
+   - 형식: DELETE FROM 테이블명 WHERE 조건;
+*/
+-- 예시: 부서번호가 30번인 부서 삭제
+DELETE FROM dept01 WHERE deptno = 30;
+
+
+
+/* ==========================================================================
+   2. 데이터베이스의 안전장치 : 트랜잭션 (Transaction)
+   ========================================================================== */
+/*
+   - 트랜잭션: 데이터베이스에서 데이터를 처리하는 하나의 논리적인 작업 단위
+   - COMMIT   : 모든 작업 내용을 영구적으로 데이터베이스에 저장하고 트랜잭션 종료
+   - ROLLBACK : 작업 도중 문제 발생 시 마지막 COMMIT 시점으로 되돌리기
+   
+   * 자동 처리 규칙: 
+     - SQL Developer 정상 종료 시 자동으로 COMMIT 됨
+     - 비정상 종료 시에는 안전을 위해 자동으로 ROLLBACK 됨
+*/
+
+
+
+/* ==========================================================================
+   3. 데이터의 신뢰성을 지키는 무결성 제약 조건 (Constraints)
+   ========================================================================== */
+/*
+   - NOT NULL     : 빈 값(NULL) 허용 안 함 (필수 입력)
+   - UNIQUE       : 중복 값 허용 안 함 (항상 유일한 값, 단 NULL은 중복 체크에서 제외됨)
+   - PRIMARY KEY  : NOT NULL + UNIQUE 결합 (테이블의 각 행을 식별하는 대표 키)
+   - FOREIGN KEY  : 다른 테이블의 컬럼을 참조 (부모 테이블에 존재하는 값만 허용, 참조 무결성)
+   - CHECK        : 지정된 범위나 조건에 맞는 데이터만 허용 (예: 성별 'M', 'F')
+*/
+
+
+/*
+   [제약 조건명 직접 지정하기 (권장)]
+   - 명명 규칙: 테이블명_컬럼명_제약조건유형 (예: emp05_empno_pk)
+*/
+CREATE TABLE emp05 (
+    empno  NUMBER(4)    CONSTRAINT emp05_empno_pk PRIMARY KEY,
+    ename  VARCHAR2(10) CONSTRAINT emp05_ename_nn NOT NULL,
+    job    VARCHAR2(9)  CONSTRAINT emp05_job_uk UNIQUE,
+    deptno NUMBER(4)    CONSTRAINT emp05_deptno_fk REFERENCES dept(deptno) 
+);
+
+-- 제약 조건 확인 쿼리
+SELECT constraint_name, constraint_type, table_name, r_constraint_name 
+FROM user_constraints 
+WHERE table_name = 'EMP05';
+
+
+
+/* ==========================================================================
+   4. 제약 조건 변경하기 (ALTER TABLE)
+   ========================================================================== */
+
+/* 1. 제약 조건 추가하기 */
+ALTER TABLE emp01 ADD PRIMARY KEY (empno);
+
+ALTER TABLE emp01 ADD CONSTRAINT emp01_deptno_fk 
+FOREIGN KEY (deptno) REFERENCES dept(deptno);
+
+
+/* 2. 제약 조건 삭제하기 */
+ALTER TABLE emp05 DROP CONSTRAINT emp05_empno_pk;
+
+ALTER TABLE emp05 DROP CONSTRAINT emp05_deptno_fk;
