@@ -547,3 +547,136 @@ drop sequence dept_seq;
 
 
 */
+
+/* ==========================================================================
+   1. 제약 조건의 비활성화와 CASCADE 옵션
+   ========================================================================== */
+/*
+   - 제약 조건 비활성화: 제약 조건을 삭제하지 않고 잠시 사용하지 않도록 보류하는 것
+   - DISABLE CONSTRAINT : 제약 조건 일시 비활성화
+   - ENABLE CONSTRAINT  : 비활성화된 제약 조건을 다시 활성화
+*/
+
+-- 예시: 비활성화 및 활성화 명령어 형식
+-- ALTER TABLE 테이블명 DISABLE CONSTRAINT 제약조건명;
+-- ALTER TABLE 테이블명 ENABLE CONSTRAINT 제약조건명;
+
+
+/*
+   [CASCADE 옵션]
+   - 부모 테이블과 자식 테이블 간의 참조 설정이 되어 있을 때 사용합니다.
+   - 부모 테이블의 제약 조건을 비활성화(또는 삭제)할 때, 
+     이를 참조하고 있는 자식 테이블의 제약 조건까지 연쇄적으로 함께 처리해 줍니다.
+*/
+-- 부모 테이블의 기본키를 CASCADE와 함께 비활성화 (자식 외래키까지 동시 영향)
+ALTER TABLE dept01 DISABLE PRIMARY KEY CASCADE;
+
+-- 부모 테이블의 기본키를 CASCADE와 함께 삭제 (참조하는 외래키 제약조건도 연속적으로 삭제됨)
+ALTER TABLE dept01 DROP PRIMARY KEY CASCADE;
+
+
+
+/* ==========================================================================
+   2. 뷰 (VIEW) : 가상 테이블
+   ========================================================================== */
+/*
+   - 뷰란? 실제 데이터를 저장하는 공간이 없고, 쿼리문만 저장하고 있는 '가상 테이블'입니다.
+   - 사용 목적:
+     1. 직접적인 테이블 접근을 제한하여 보안성 향상
+     2. 복잡한 질의(Query)를 쉽게 만들어 재사용
+     
+   - 뷰의 특징:
+     1. 실제 데이터를 갖고 있지 않지만, 뷰를 통해 기본 테이블을 관리할 수 있습니다.
+     2. 뷰를 통해 SELECT는 자유롭지만, 특정 조건(그룹함수, DISTINCT 등)에서는 DML이 제한됩니다.
+*/
+
+
+/*
+   [뷰 생성 형식]
+   CREATE [OR REPLACE] [FORCE | NOFORCE] VIEW view_name
+   AS subquery
+   [WITH CHECK OPTION]
+   [WITH READ ONLY];
+   
+   * 주요 옵션 설명:
+     - OR REPLACE        : 기존 뷰가 있어도 삭제하지 않고 새로운 내용으로 덮어씁니다.
+     - FORCE / NOFORCE   : 기본 테이블의 존재 여부와 상관없이 뷰를 강제 생성합니다.
+     - WITH CHECK OPTION : 뷰를 통해 볼 수 있는 범위 내에서만 INSERT/UPDATE가 가능합니다.
+     - WITH READ ONLY    : 뷰를 통한 데이터 변경(DML)을 원천 차단하고 오직 조회만 허용합니다.
+*/
+
+-- 뷰 생성 권한 부여 (일반 사용자 계정에서 '권한 불충분' 에러 발생 시 관리자 계정에서 실행 필요)
+-- GRANT CREATE VIEW TO scott;
+
+-- 예시: 단순 뷰 생성 및 컬럼 별칭 부여
+CREATE OR REPLACE VIEW view_emp(사원번호, 사원명, 급여, 부서번호)
+AS SELECT empno, ename, sal, deptno FROM emp01;
+
+-- 생성된 뷰 정보 확인 (데이터 딕셔너리)
+SELECT view_name, text FROM user_views;
+
+
+/*
+   [단순 뷰에서 DML(INSERT/UPDATE/DELETE) 명령을 사용할 수 없는 경우]
+   1. 뷰 정의에 포함되지 않은 컬럼 중에 기본 테이블에 NOT NULL 제약 조건이 있는 경우
+   2. 산술 표현식(예: sal * 12)으로 정의된 가상 컬럼이 포함된 경우
+   3. DISTINCT 키워드가 포함된 경우
+   4. 그룹 함수나 GROUP BY 절이 포함된 경우
+*/
+
+
+
+/* ==========================================================================
+   3. 시퀀스 (Sequence) : 번호 자동 생성기
+   ========================================================================== */
+/*
+   - 시퀀스란? 유일(Unique)한 순차적 숫자를 자동으로 생성해 주는 오라클 객체입니다.
+   - 주로 기본키(PK) 값에 순번을 자동으로 매길 때 사용합니다.
+*/
+
+
+/*
+   [시퀀스 생성 형식]
+   CREATE SEQUENCE 시퀀스명
+   START WITH n          -- 시작값 지정 (기본값 등)
+   INCREMENT BY n        -- 증가값 지정 (예: 1씩, 10씩 증가)
+   MAXVALUE n | NOMAXVALUE -- 최대값 지정 (NOMAXVALUE: 무한대)
+   MINVALUE n | NOMINVALUE -- 최소값 지정
+   CYCLE | NOCYCLE       -- 최대값 도달 시 처음으로 돌아갈지 여부
+   CACHE | NOCACHE       -- 메모리 상에서 시퀀스 값을 미리 관리할지 여부
+*/
+
+-- 예시: 시퀀스 생성
+CREATE SEQUENCE emp_seq
+START WITH 1
+INCREMENT BY 1
+MAXVALUE 100000;
+
+
+/*
+   [시퀀스 사용 방법 (Pseudo Column)]
+   - NEXTVAL : 현재 시퀀스의 다음 값을 반환하고 번호를 증가시킵니다. (가장 많이 사용)
+   - CURRVAL : 현재 시퀀스 값을 반환합니다. (반드시 NEXTVAL을 한 번 이상 수행한 후 사용 가능)
+*/
+
+-- 예시: 데이터 추가 시 시퀀스 번호 자동 할당
+INSERT INTO emp01 VALUES (emp_seq.NEXTVAL, 'JULLIA', SYSDATE);
+
+-- 현재 시퀀스 값 확인
+SELECT emp_seq.CURRVAL FROM dual;
+
+
+/*
+   [시퀀스 변경 및 삭제]
+   - 변경: ALTER SEQUENCE 시퀀스명 [옵션수정];
+   - 삭제: DROP SEQUENCE 시퀀스명;
+*/
+-- 예시: 시퀀스 최대값 변경
+ALTER SEQUENCE dept_seq MAXVALUE 100000;
+
+-- 예시: 시퀀스 삭제
+DROP SEQUENCE dept_seq;
+
+-- 전체 시퀀스 정보 확인 (데이터 딕셔너리)
+SELECT sequence_name, min_value, max_value, increment_by, cycle_flag 
+FROM user_sequences;
